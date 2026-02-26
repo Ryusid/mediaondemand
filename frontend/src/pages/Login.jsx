@@ -1,35 +1,48 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mail, Lock, User, ArrowRight, Loader2, AlertCircle } from 'lucide-react';
-import { signIn, signUp } from '../services/auth';
+import { Mail, Lock, User, ArrowRight, Loader2, AlertCircle, Hash, CheckCircle2 } from 'lucide-react';
+import { signIn, signUp, confirmSignUp } from '../services/auth';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const Login = ({ onLogin }) => {
-    const [isLogin, setIsLogin] = useState(true);
+    const [mode, setMode] = useState('login'); // login, signup, verify
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
-    const [formData, setFormData] = useState({ email: '', password: '', name: '' });
+    const [message, setMessage] = useState('');
+    const [formData, setFormData] = useState({
+        username: '',
+        password: '',
+        email: '',
+        name: '',
+        code: ''
+    });
     const navigate = useNavigate();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
         setError('');
+        setMessage('');
 
         try {
-            if (isLogin) {
-                await signIn(formData.email, formData.password);
-            } else {
-                await signUp(formData.email, formData.password, formData.name);
-                alert('Registration successful! Please check your email to verify your account (if configured), then log in.');
-                setIsLogin(true);
-                setLoading(false);
-                return;
+            if (mode === 'login') {
+                await signIn(formData.username, formData.password);
+                await onLogin();
+                navigate('/catalog');
             }
-            await onLogin();
-            navigate('/catalog');
+            else if (mode === 'signup') {
+                await signUp(formData.username, formData.password, formData.email, formData.name);
+                setMessage('Registration successful! Check your email for a verification code.');
+                setMode('verify');
+            }
+            else if (mode === 'verify') {
+                await confirmSignUp(formData.username, formData.code);
+                setMessage('Account verified! You can now sign in.');
+                setMode('login');
+            }
         } catch (err) {
-            setError(err.message || 'Authentication failed. Please check your credentials.');
+            console.error(err);
+            setError(err.message || 'Action failed. Please check your inputs.');
         } finally {
             setLoading(false);
         }
@@ -46,10 +59,14 @@ const Login = ({ onLogin }) => {
 
                 <div className="text-center mb-8">
                     <h2 className="text-3xl font-bold mb-2 font-['Outfit']">
-                        {isLogin ? 'Welcome Back' : 'Create Account'}
+                        {mode === 'login' && 'Welcome Back'}
+                        {mode === 'signup' && 'Create Account'}
+                        {mode === 'verify' && 'Verify Account'}
                     </h2>
                     <p className="text-slate-400">
-                        {isLogin ? 'Sign in to access your media cloud' : 'Join the next-gen media platform'}
+                        {mode === 'login' && 'Sign in to access your media cloud'}
+                        {mode === 'signup' && 'Join the next-gen media platform'}
+                        {mode === 'verify' && `Enter the code sent to ${formData.email}`}
                     </p>
                 </div>
 
@@ -65,79 +82,128 @@ const Login = ({ onLogin }) => {
                             <span>{error}</span>
                         </motion.div>
                     )}
+                    {message && (
+                        <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            className="bg-green-500/10 border border-green-500/20 text-green-400 p-3 rounded-xl mb-6 flex items-start gap-2 text-sm"
+                        >
+                            <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0" />
+                            <span>{message}</span>
+                        </motion.div>
+                    )}
                 </AnimatePresence>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
-                    {!isLogin && (
+                    {mode === 'signup' && (
+                        <>
+                            <div className="space-y-1">
+                                <label className="text-xs font-semibold text-slate-500 uppercase ml-1">Full Name</label>
+                                <div className="relative">
+                                    <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+                                    <input
+                                        type="text" required placeholder="John Doe" className="form-input pl-12"
+                                        value={formData.name}
+                                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                    />
+                                </div>
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-xs font-semibold text-slate-500 uppercase ml-1">Email Address</label>
+                                <div className="relative">
+                                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+                                    <input
+                                        type="email" required placeholder="name@example.com" className="form-input pl-12"
+                                        value={formData.email}
+                                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                    />
+                                </div>
+                            </div>
+                        </>
+                    )}
+
+                    {mode !== 'verify' && (
                         <div className="space-y-1">
-                            <label className="text-xs font-semibold text-slate-500 uppercase ml-1">Full Name</label>
+                            <label className="text-xs font-semibold text-slate-500 uppercase ml-1">Username or Email</label>
                             <div className="relative">
                                 <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
                                 <input
-                                    type="text"
-                                    required
-                                    placeholder="John Doe"
-                                    className="form-input pl-12"
-                                    value={formData.name}
-                                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                    type="text" required placeholder="jdoe" className="form-input pl-12"
+                                    value={formData.username}
+                                    onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                                 />
                             </div>
                         </div>
                     )}
 
-                    <div className="space-y-1">
-                        <label className="text-xs font-semibold text-slate-500 uppercase ml-1">Email Address</label>
-                        <div className="relative">
-                            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
-                            <input
-                                type="email"
-                                required
-                                placeholder="name@example.com"
-                                className="form-input pl-12"
-                                value={formData.email}
-                                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                            />
+                    {mode !== 'verify' && (
+                        <div className="space-y-1">
+                            <label className="text-xs font-semibold text-slate-500 uppercase ml-1">Password</label>
+                            <div className="relative">
+                                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+                                <input
+                                    type="password" required placeholder="••••••••" className="form-input pl-12"
+                                    value={formData.password}
+                                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                />
+                            </div>
                         </div>
-                    </div>
+                    )}
 
-                    <div className="space-y-1">
-                        <label className="text-xs font-semibold text-slate-500 uppercase ml-1">Password</label>
-                        <div className="relative">
-                            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
-                            <input
-                                type="password"
-                                required
-                                placeholder="••••••••"
-                                className="form-input pl-12"
-                                value={formData.password}
-                                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                            />
+                    {mode === 'verify' && (
+                        <div className="space-y-1">
+                            <label className="text-xs font-semibold text-slate-500 uppercase ml-1">6-Digit Code</label>
+                            <div className="relative">
+                                <Hash className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+                                <input
+                                    type="text" required placeholder="123456" className="form-input pl-12 tracking-[0.5em] font-bold text-center"
+                                    maxLength="6"
+                                    value={formData.code}
+                                    onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+                                />
+                            </div>
                         </div>
-                    </div>
+                    )}
 
                     <button
-                        type="submit"
-                        disabled={loading}
+                        type="submit" disabled={loading}
                         className="btn-primary w-full py-4 mt-4 flex items-center justify-center gap-2 group"
                     >
-                        {loading ? (
-                            <Loader2 className="w-5 h-5 animate-spin" />
-                        ) : (
+                        {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (
                             <>
-                                {isLogin ? 'Sign In' : 'Sign Up'}
+                                {mode === 'login' ? 'Sign In' : mode === 'signup' ? 'Create Account' : 'Verify My Account'}
                                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                             </>
                         )}
                     </button>
                 </form>
 
-                <div className="mt-8 pt-6 border-t border-white/5 text-center">
-                    <button
-                        onClick={() => setIsLogin(!isLogin)}
-                        className="text-slate-400 hover:text-brand-400 transition-colors text-sm font-medium"
-                    >
-                        {isLogin ? "Don't have an account? Create one" : "Already have an account? Sign in"}
-                    </button>
+                <div className="mt-8 pt-6 border-t border-white/5 text-center flex flex-col gap-3">
+                    {mode === 'login' ? (
+                        <button
+                            onClick={() => { setMode('signup'); setError(''); setMessage(''); }}
+                            className="text-slate-400 hover:text-brand-400 transition-colors text-sm font-medium"
+                        >
+                            Don't have an account? Create one
+                        </button>
+                    ) : (
+                        <button
+                            onClick={() => { setMode('login'); setError(''); setMessage(''); }}
+                            className="text-slate-400 hover:text-brand-400 transition-colors text-sm font-medium"
+                        >
+                            Back to Sign In
+                        </button>
+                    )}
+
+                    {mode === 'login' && (
+                        <button
+                            onClick={() => { setMode('verify'); setError(''); setMessage(''); }}
+                            className="text-slate-500 hover:text-slate-300 transition-colors text-xs"
+                        >
+                            Need to verify an existing account?
+                        </button>
+                    )}
                 </div>
             </motion.div>
         </div>

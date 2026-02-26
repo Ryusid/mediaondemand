@@ -20,7 +20,7 @@ try {
     console.error('Frontend Error: Failed to initialize Cognito UserPool', e);
 }
 
-export const signUp = (email, password, name) => {
+export const signUp = (username, password, email, name) => {
     return new Promise((resolve, reject) => {
         if (!userPool) return reject('Cognito not initialized. Check environment variables.');
         const attributeList = [
@@ -28,27 +28,39 @@ export const signUp = (email, password, name) => {
             { Name: 'name', Value: name }
         ];
 
-        userPool.signUp(email, password, attributeList, null, (err, result) => {
+        userPool.signUp(username, password, attributeList, null, (err, result) => {
             if (err) reject(err);
             else resolve(result.user);
         });
     });
 };
 
-export const signIn = (email, password) => {
+export const confirmSignUp = (username, code) => {
+    return new Promise((resolve, reject) => {
+        if (!userPool) return reject('Cognito not initialized.');
+        const userData = { Username: username, Pool: userPool };
+        const cognitoUser = new CognitoUser(userData);
+
+        cognitoUser.confirmRegistration(code, true, (err, result) => {
+            if (err) reject(err);
+            else resolve(result);
+        });
+    });
+};
+
+export const signIn = (username, password) => {
     return new Promise((resolve, reject) => {
         if (!userPool) return reject('Cognito not initialized. Check environment variables.');
-        const authenticationData = { Username: email, Password: password };
+        const authenticationData = { Username: username, Password: password };
         const authenticationDetails = new AuthenticationDetails(authenticationData);
 
-        const userData = { Username: email, Pool: userPool };
+        const userData = { Username: username, Pool: userPool };
         const cognitoUser = new CognitoUser(userData);
 
         cognitoUser.authenticateUser(authenticationDetails, {
             onSuccess: (result) => resolve(result),
             onFailure: (err) => reject(err),
             newPasswordRequired: (userAttributes) => {
-                // Handle new password requirement if needed
                 reject({ code: 'NewPasswordRequired', userAttributes });
             }
         });
