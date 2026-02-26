@@ -1,0 +1,82 @@
+import {
+    CognitoUserPool,
+    CognitoUser,
+    AuthenticationDetails
+} from 'amazon-cognito-identity-js';
+
+const poolData = {
+    UserPoolId: import.meta.env.VITE_COGNITO_USER_POOL_ID,
+    ClientId: import.meta.env.VITE_COGNITO_CLIENT_ID
+};
+
+const userPool = new CognitoUserPool(poolData);
+
+export const signUp = (email, password, name) => {
+    return new Promise((resolve, reject) => {
+        const attributeList = [
+            { Name: 'email', Value: email },
+            { Name: 'name', Value: name }
+        ];
+
+        userPool.signUp(email, password, attributeList, null, (err, result) => {
+            if (err) reject(err);
+            else resolve(result.user);
+        });
+    });
+};
+
+export const signIn = (email, password) => {
+    return new Promise((resolve, reject) => {
+        const authenticationData = { Username: email, Password: password };
+        const authenticationDetails = new AuthenticationDetails(authenticationData);
+
+        const userData = { Username: email, Pool: userPool };
+        const cognitoUser = new CognitoUser(userData);
+
+        cognitoUser.authenticateUser(authenticationDetails, {
+            onSuccess: (result) => resolve(result),
+            onFailure: (err) => reject(err),
+            newPasswordRequired: (userAttributes) => {
+                // Handle new password requirement if needed
+                reject({ code: 'NewPasswordRequired', userAttributes });
+            }
+        });
+    });
+};
+
+export const logout = () => {
+    const cognitoUser = userPool.getCurrentUser();
+    if (cognitoUser) {
+        cognitoUser.signOut();
+    }
+};
+
+export const getSession = () => {
+    return new Promise((resolve, reject) => {
+        const cognitoUser = userPool.getCurrentUser();
+        if (!cognitoUser) return reject('No user logged in');
+
+        cognitoUser.getSession((err, session) => {
+            if (err) reject(err);
+            else resolve(session);
+        });
+    });
+};
+
+export const getUserAttributes = () => {
+    return new Promise((resolve, reject) => {
+        const cognitoUser = userPool.getCurrentUser();
+        if (!cognitoUser) return reject('No user logged in');
+
+        cognitoUser.getUserAttributes((err, attributes) => {
+            if (err) reject(err);
+            else {
+                const results = {};
+                for (let attribute of attributes) {
+                    results[attribute.getName()] = attribute.getValue();
+                }
+                resolve(results);
+            }
+        });
+    });
+};

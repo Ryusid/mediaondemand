@@ -93,6 +93,13 @@ resource "aws_instance" "main" {
     #!/bin/bash
     set -ex
 
+    # Add 2GB Swap file (essential for 1GB RAM instances to build Docker images)
+    fallocate -l 2G /swapfile
+    chmod 600 /swapfile
+    mkswap /swapfile
+    swapon /swapfile
+    echo '/swapfile none swap sw 0 0' >> /etc/fstab
+
     # Update system
     yum update -y
 

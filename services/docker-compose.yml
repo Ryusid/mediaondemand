@@ -105,10 +105,16 @@ services:
         awslogs-group: /mediaondemand/streaming-service
         tag: "{{.Name}}"
 
-  # --- Nginx Reverse Proxy (routes /api/users, /api/catalog, etc.) ---
+  # --- Frontend & Gateway (Nginx) ---
   nginx:
-    image: nginx:alpine
-    container_name: mod-nginx
+    build:
+      context: ../frontend
+      args:
+        - VITE_API_URL=/api
+        - VITE_COGNITO_USER_POOL_ID=${COGNITO_USER_POOL_ID}
+        - VITE_COGNITO_CLIENT_ID=${COGNITO_CLIENT_ID}
+        - VITE_AWS_REGION=${AWS_REGION:-eu-west-1}
+    container_name: mod-gateway
     ports:
       - "3000:80"
     volumes:
