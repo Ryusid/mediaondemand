@@ -106,16 +106,16 @@ resource "aws_api_gateway_integration_response" "options" {
 resource "aws_api_gateway_deployment" "main" {
   rest_api_id = aws_api_gateway_rest_api.main.id
 
-  # Force redeploy on any resource changes
+  # Force redeploy on any configuration changes
   triggers = {
     redeployment = sha1(jsonencode([
-      aws_api_gateway_resource.proxy.id,
-      aws_api_gateway_method.proxy.id,
-      aws_api_gateway_integration.proxy.id,
-      aws_api_gateway_method.options.id,
-      aws_api_gateway_integration.options.id,
-      aws_api_gateway_method_response.options.id,
-      aws_api_gateway_integration_response.options.id,
+      aws_api_gateway_resource.proxy.path_part,
+      aws_api_gateway_method.proxy.http_method,
+      aws_api_gateway_integration.proxy.uri,
+      aws_api_gateway_method.options.http_method,
+      aws_api_gateway_integration.options.type,
+      aws_api_gateway_gateway_response.default_4xx.response_type,
+      aws_api_gateway_gateway_response.default_5xx.response_type,
     ]))
   }
 
