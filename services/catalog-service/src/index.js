@@ -3,10 +3,16 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const { Pool } = require('pg');
+const { S3Client, DeleteObjectCommand } = require('@aws-sdk/client-s3');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const SERVICE_NAME = process.env.SERVICE_NAME || 'catalog-service';
+
+// S3 Client
+const s3 = new S3Client({ region: process.env.AWS_REGION || 'eu-west-1' });
+const RAW_BUCKET = process.env.S3_RAW_BUCKET;
+const PROCESSED_BUCKET = process.env.S3_PROCESSED_BUCKET;
 
 // PostgreSQL connection
 const pool = new Pool({
@@ -171,13 +177,44 @@ app.patch('/api/catalog/:id', async (req, res) => {
     }
 });
 
+
 // Delete content
 app.delete('/api/catalog/:id', async (req, res) => {
     try {
-        const result = await pool.query('DELETE FROM content WHERE id = $1 RETURNING id', [req.params.id]);
-        if (result.rows.length === 0) {
+        // 1. Get the S3 keys first
+        const itemResult = await pool.query('SELECT s3_key, processed_s3_key FROM content WHERE id = $1', [req.params.id]);
+        if (itemResult.rows.length === 0) {
             return res.status(404).json({ error: 'Content not found' });
         }
+
+        const { s3_key, processed_s3_key } = itemResult.rows[0];
+
+        // 2. Delete from S3 (Raw)
+        if (s3_key) {
+            try {
+                await s3.send(new DeleteObjectCommand({ Bucket: RAW_BUCKET, Key: s3_key }));
+                console.log(`Deleted raw object: ${s3_key}`);
+            } catch (err) {
+                console.warn(`Failed to delete raw object ${s3_key}:`, err.message);
+            }
+        }
+
+        // 3. Delete from S3 (Processed)
+        if (processed_s3_key) {
+            try {
+                await s3.send(new DeleteObjectCommand({ Bucket: PROCESSED_BUCKET, Key: processed_s3_key }));
+                console.log(`Deleted processed object: ${processed_s3_key}`);
+
+                // Also delete metadata JSON if it exists
+                const metadataKey = processed_s3_key.replace(/.mp4|.pdf|.epub/g, '.json');
+                await s3.send(new DeleteObjectCommand({ Bucket: PROCESSED_BUCKET, Key: metadataKey }));
+            } catch (err) {
+                console.warn(`Failed to delete processed object ${processed_s3_key}:`, err.message);
+            }
+        }
+
+        // 4. Delete from Database
+        const result = await pool.query('DELETE FROM content WHERE id = $1 RETURNING id', [req.params.id]);
         res.json({ deleted: true, id: result.rows[0].id });
     } catch (error) {
         console.error('Error deleting content:', error);

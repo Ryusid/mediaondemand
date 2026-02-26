@@ -33,6 +33,8 @@ services:
       - PORT=3000
       - SERVICE_NAME=catalog-service
       - DATABASE_URL=postgresql://${DB_USERNAME}:${DB_PASSWORD}@${DB_HOST}:5432/${DB_NAME}
+      - S3_RAW_BUCKET=${S3_RAW_BUCKET}
+      - S3_PROCESSED_BUCKET=${S3_PROCESSED_BUCKET}
       - AWS_REGION=${AWS_REGION:-eu-west-1}
     depends_on:
       - user-service

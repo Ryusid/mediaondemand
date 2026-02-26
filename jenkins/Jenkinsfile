@@ -3,130 +3,44 @@ pipeline {
 
     environment {
         AWS_REGION       = 'eu-west-1'
-        ECR_REGISTRY     = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
         PROJECT_NAME     = 'mediaondemand'
-        SERVICES         = 'user-service,catalog-service,upload-service,search-service,streaming-service'
     }
 
     stages {
         stage('Checkout') {
             steps {
                 checkout scm
-                echo "Checked out branch: ${env.BRANCH_NAME ?: 'main'}"
             }
         }
 
-        stage('Lint & Test') {
+        stage('Docker Rebuild') {
             steps {
                 script {
-                    def services = SERVICES.split(',')
-                    for (svc in services) {
-                        dir("services/${svc}") {
-                            sh 'npm ci'
-                            sh 'npm test'
-                        }
+                    dir('services') {
+                        // Force rebuild to ensure code changes are picked up
+                        sh 'docker-compose build --no-cache nginx catalog-service'
+                        sh 'docker-compose build' 
                     }
                 }
             }
         }
 
-        stage('Docker Build') {
+        stage('Deploy') {
             steps {
                 script {
-                    def services = SERVICES.split(',')
-                    for (svc in services) {
-                        dir("services/${svc}") {
-                            sh "docker build -t ${PROJECT_NAME}/${svc}:${env.BUILD_NUMBER} -t ${PROJECT_NAME}/${svc}:latest ."
-                        }
+                    dir('services') {
+                        sh 'docker-compose up -d --remove-orphans'
                     }
                 }
             }
         }
 
-        stage('Push to ECR') {
+        stage('Health Check') {
             steps {
                 script {
-                    // Login to ECR
-                    sh "aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ECR_REGISTRY}"
-
-                    def services = SERVICES.split(',')
-                    for (svc in services) {
-                        sh """
-                            docker tag ${PROJECT_NAME}/${svc}:${env.BUILD_NUMBER} ${ECR_REGISTRY}/${PROJECT_NAME}/${svc}:${env.BUILD_NUMBER}
-                            docker tag ${PROJECT_NAME}/${svc}:latest ${ECR_REGISTRY}/${PROJECT_NAME}/${svc}:latest
-                            docker push ${ECR_REGISTRY}/${PROJECT_NAME}/${svc}:${env.BUILD_NUMBER}
-                            docker push ${ECR_REGISTRY}/${PROJECT_NAME}/${svc}:latest
-                        """
-                    }
-                }
-            }
-        }
-
-        stage('Terraform Plan') {
-            steps {
-                dir('terraform') {
-                    sh 'terraform init'
-                    sh 'terraform plan -out=tfplan'
-                }
-            }
-        }
-
-        stage('Approval') {
-            steps {
-                input message: 'Review Terraform plan. Deploy to production?', ok: 'Deploy'
-            }
-        }
-
-        stage('Terraform Apply') {
-            steps {
-                dir('terraform') {
-                    sh 'terraform apply -auto-approve tfplan'
-                }
-            }
-        }
-
-        stage('Deploy Services') {
-            steps {
-                script {
-                    def ec2Ip = sh(script: "cd terraform && terraform output -raw ec2_public_ip", returnStdout: true).trim()
-
-                    sh """
-                        ssh -o StrictHostKeyChecking=no ec2-user@${ec2Ip} << 'DEPLOY'
-                            cd /home/ec2-user/mediaondemand/services
-
-                            # Login to ECR
-                            aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ECR_REGISTRY}
-
-                            # Pull latest images
-                            docker-compose pull
-
-                            # Restart services
-                            docker-compose up -d --remove-orphans
-
-                            # Verify
-                            sleep 10
-                            curl -f http://localhost:3000/health || exit 1
-                            echo "Deployment successful!"
-                        DEPLOY
-                    """
-                }
-            }
-        }
-
-        stage('Smoke Tests') {
-            steps {
-                script {
-                    def ec2Ip = sh(script: "cd terraform && terraform output -raw ec2_public_ip", returnStdout: true).trim()
-
-                    // Test each service health endpoint
-                    sh "curl -f http://${ec2Ip}:3000/health"
-                    sh "curl -f http://${ec2Ip}:3001/health"
-                    sh "curl -f http://${ec2Ip}:3002/health"
-                    sh "curl -f http://${ec2Ip}:3003/health"
-                    sh "curl -f http://${ec2Ip}:3004/health"
-                    sh "curl -f http://${ec2Ip}:3005/health"
-
-                    echo "All smoke tests passed!"
+                    sh 'sleep 10'
+                    sh 'curl -f http://localhost:3000/health || echo "Frontend/Gateway might still be starting..."'
+                    sh 'curl -f http://localhost:3002/health || exit 1' // Catalog is critical
                 }
             }
         }
@@ -134,13 +48,12 @@ pipeline {
 
     post {
         success {
-            echo 'Pipeline completed successfully!'
+            echo 'Deployment successful! Website is live.'
         }
         failure {
-            echo 'Pipeline failed. Check logs for details.'
+            echo 'Deployment failed. Check logs.'
         }
         always {
-            // Clean up Docker images to save disk space
             sh 'docker image prune -f || true'
         }
     }

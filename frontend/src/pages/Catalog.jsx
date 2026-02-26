@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { catalogApi } from '../services/api';
 import { Search, Filter, Play, Book, Loader2, Info, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const Catalog = () => {
+    const navigate = useNavigate();
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
@@ -108,7 +110,13 @@ const Catalog = () => {
                             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
                         >
                             {items.map((item, idx) => (
-                                <MediaCard key={item.id} item={item} index={idx} onDelete={() => handleDelete(item.id)} />
+                                <MediaCard
+                                    key={item.id}
+                                    item={item}
+                                    index={idx}
+                                    onDelete={() => handleDelete(item.id)}
+                                    onClick={() => navigate(item.type === 'video' ? `/player/${item.id}` : `/viewer/${item.id}`)}
+                                />
                             ))}
                         </motion.div>
                     ) : (
@@ -130,13 +138,14 @@ const Catalog = () => {
     );
 };
 
-const MediaCard = ({ item, index, onDelete }) => {
+const MediaCard = ({ item, index, onDelete, onClick }) => {
     return (
         <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.05 }}
             whileHover={{ y: -8 }}
+            onClick={onClick}
             className="glass-card group cursor-pointer p-0 overflow-hidden relative"
         >
             <button

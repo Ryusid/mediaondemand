@@ -6,6 +6,8 @@ import Home from './pages/Home';
 import Login from './pages/Login';
 import Catalog from './pages/Catalog';
 import Upload from './pages/Upload';
+import Player from './pages/Player';
+import Viewer from './pages/Viewer';
 
 const App = () => {
     const [user, setUser] = useState(null);
@@ -48,6 +50,8 @@ const App = () => {
                     <Route path="/" element={<Home />} />
                     <Route path="/login" element={<Login onLogin={checkAuth} />} />
                     <Route path="/catalog" element={<Catalog />} />
+                    <Route path="/player/:id" element={<Player />} />
+                    <Route path="/viewer/:id" element={<Viewer />} />
                     <Route path="/upload" element={user ? <Upload /> : <Navigate to="/login" />} />
                     <Route path="*" element={<Navigate to="/" />} />
                 </Routes>
