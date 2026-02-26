@@ -25,6 +25,7 @@ export const catalogApi = {
     list: (params) => api.get('/catalog', { params }),
     get: (id) => api.get(`/catalog/${id}`),
     create: (data) => api.post('/catalog', data),
+    delete: (id) => api.delete(`/catalog/${id}`),
     search: (q) => api.get('/search', { params: { q } }),
     suggest: (q) => api.get('/search/suggest', { params: { q } }),
 };

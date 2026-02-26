@@ -130,7 +130,29 @@ app.post('/api/catalog', async (req, res) => {
     }
 });
 
-// Update content status (called by SNS when processing completes)
+// Update content status by s3_key (called by processing callback)
+app.patch('/api/catalog/status/update', async (req, res) => {
+    try {
+        const { s3_key, status, processed_s3_key, duration, format } = req.body;
+        if (!s3_key) return res.status(400).json({ error: 's3_key is required' });
+
+        const result = await pool.query(
+            `UPDATE content SET status = $1, processed_s3_key = $2, duration = $3, format = $4, updated_at = NOW()
+       WHERE s3_key = $5 RETURNING *`,
+            [status, processed_s3_key, duration, format, s3_key]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Content with this s3_key not found' });
+        }
+        res.json(result.rows[0]);
+    } catch (error) {
+        console.error('Error updating status by key:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Update content status by ID
 app.patch('/api/catalog/:id', async (req, res) => {
     try {
         const { status, processed_s3_key, duration } = req.body;

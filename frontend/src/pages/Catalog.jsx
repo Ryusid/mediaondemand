@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { catalogApi } from '../services/api';
-import { Search, Filter, Play, Book, Loader2, Info } from 'lucide-react';
+import { Search, Filter, Play, Book, Loader2, Info, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const Catalog = () => {
@@ -40,6 +40,17 @@ const Catalog = () => {
         }
     };
 
+    const handleDelete = async (id) => {
+        if (!confirm('Are you sure you want to delete this item?')) return;
+        try {
+            await catalogApi.delete(id);
+            setItems(items.filter(item => item.id !== id));
+        } catch (err) {
+            console.error('Delete failed:', err);
+            alert('Failed to delete item.');
+        }
+    };
+
     return (
         <div className="space-y-8 min-h-screen pb-24">
             {/* Header & Search */}
@@ -72,8 +83,8 @@ const Catalog = () => {
                         key={f.id}
                         onClick={() => setFilter(f.id)}
                         className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold transition-all whitespace-nowrap border ${filter === f.id
-                                ? 'bg-brand-500/20 border-brand-500/50 text-brand-400'
-                                : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10'
+                            ? 'bg-brand-500/20 border-brand-500/50 text-brand-400'
+                            : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10'
                             }`}
                     >
                         <f.icon className="w-4 h-4" />
@@ -97,7 +108,7 @@ const Catalog = () => {
                             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
                         >
                             {items.map((item, idx) => (
-                                <MediaCard key={item.id} item={item} index={idx} />
+                                <MediaCard key={item.id} item={item} index={idx} onDelete={() => handleDelete(item.id)} />
                             ))}
                         </motion.div>
                     ) : (
@@ -119,15 +130,23 @@ const Catalog = () => {
     );
 };
 
-const MediaCard = ({ item, index }) => {
+const MediaCard = ({ item, index, onDelete }) => {
     return (
         <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.05 }}
             whileHover={{ y: -8 }}
-            className="glass-card group cursor-pointer p-0 overflow-hidden"
+            className="glass-card group cursor-pointer p-0 overflow-hidden relative"
         >
+            <button
+                onClick={(e) => { e.stopPropagation(); onDelete(); }}
+                className="absolute top-4 right-4 p-2 bg-black/60 backdrop-blur-md rounded-lg text-slate-400 hover:text-red-400 border border-white/10 opacity-0 group-hover:opacity-100 transition-all z-20"
+                title="Delete content"
+            >
+                <Trash2 className="w-4 h-4" />
+            </button>
+
             <div className="relative aspect-video bg-gradient-to-br from-slate-800 to-black overflow-hidden">
                 {item.type === 'video' ? (
                     <div className="absolute inset-0 flex items-center justify-center">
