@@ -39,7 +39,7 @@ jobs:
         with:
           context: ./frontend
           push: true
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/nginx:latest
+          tags: ghcr.io/ryusid/mediaondemand/nginx:latest
           build-args: |
             VITE_API_URL=${{ secrets.VITE_API_URL }}
             VITE_COGNITO_USER_POOL_ID=${{ secrets.VITE_COGNITO_USER_POOL_ID }}
@@ -52,7 +52,7 @@ jobs:
         with:
           context: ./services/catalog-service
           push: true
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/catalog-service:latest
+          tags: ghcr.io/ryusid/mediaondemand/catalog-service:latest
 
   deploy:
     needs: build-and-push
