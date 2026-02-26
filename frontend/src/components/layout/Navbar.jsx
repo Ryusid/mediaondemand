@@ -76,7 +76,7 @@ const Navbar = ({ user, onLogout }) => {
                                 <div className="w-6 h-6 rounded-full bg-brand-500/20 flex items-center justify-center">
                                     <User className="w-3.5 h-3.5 text-brand-400" />
                                 </div>
-                                <span className="text-sm font-medium text-slate-300">{user.name || user.email}</span>
+                                <span className="text-sm font-medium text-slate-300">{user?.name || user?.email || 'User'}</span>
                             </div>
                             <button
                                 onClick={handleLogout}
