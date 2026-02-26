@@ -48,7 +48,7 @@ resource "aws_api_gateway_integration" "proxy" {
   http_method             = aws_api_gateway_method.proxy.http_method
   type                    = "HTTP_PROXY"
   integration_http_method = "ANY"
-  uri                     = "http://${var.ec2_public_ip}:3000/{proxy}"
+  uri                     = "http://${var.ec2_public_ip}:3000/api/{proxy}"
 
   request_parameters = {
     "integration.request.path.proxy" = "method.request.path.proxy"

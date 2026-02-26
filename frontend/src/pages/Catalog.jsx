@@ -20,7 +20,7 @@ const Catalog = () => {
         try {
             const params = filter !== 'all' ? { type: filter } : {};
             const res = await catalogApi.list(params);
-            setItems(res.data.content);
+            setItems(res.data?.content || []);
         } catch (err) {
             console.error(err);
         } finally {
@@ -34,7 +34,7 @@ const Catalog = () => {
         setLoading(true);
         try {
             const res = await catalogApi.search(search);
-            setItems(res.data.results);
+            setItems(res.data?.results || []);
         } catch (err) {
             console.error(err);
         } finally {
@@ -103,7 +103,7 @@ const Catalog = () => {
                 </div>
             ) : (
                 <AnimatePresence>
-                    {items.length > 0 ? (
+                    {items && items.length > 0 ? (
                         <motion.div
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
