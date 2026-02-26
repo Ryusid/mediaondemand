@@ -12,7 +12,7 @@ services:
       - PORT=3000
       - SERVICE_NAME=user-service
       - COGNITO_USER_POOL_ID=${COGNITO_USER_POOL_ID}
-      - COGNITO_APP_CLIENT_ID=${COGNITO_APP_CLIENT_ID}
+      - COGNITO_APP_CLIENT_ID=${COGNITO_CLIENT_ID}
       - AWS_REGION=${AWS_REGION:-eu-west-1}
     restart: unless-stopped
     logging:
