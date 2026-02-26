@@ -61,8 +61,18 @@ export const signIn = (username, password) => {
             onSuccess: (result) => resolve(result),
             onFailure: (err) => reject(err),
             newPasswordRequired: (userAttributes) => {
-                reject({ code: 'NewPasswordRequired', userAttributes });
+                // Pass back the user object so we can call completeNewPasswordChallenge on it
+                resolve({ challenge: 'NewPasswordRequired', cognitoUser, userAttributes });
             }
+        });
+    });
+};
+
+export const completeNewPassword = (cognitoUser, newPassword) => {
+    return new Promise((resolve, reject) => {
+        cognitoUser.completeNewPasswordChallenge(newPassword, {}, {
+            onSuccess: (result) => resolve(result),
+            onFailure: (err) => reject(err)
         });
     });
 };

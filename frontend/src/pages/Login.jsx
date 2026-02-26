@@ -1,20 +1,23 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Mail, Lock, User, ArrowRight, Loader2, AlertCircle, Hash, CheckCircle2 } from 'lucide-react';
-import { signIn, signUp, confirmSignUp } from '../services/auth';
+import { signIn, signUp, confirmSignUp, completeNewPassword } from '../services/auth';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const Login = ({ onLogin }) => {
-    const [mode, setMode] = useState('login'); // login, signup, verify
+    const [mode, setMode] = useState('login'); // login, signup, verify, new_password
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [message, setMessage] = useState('');
+    const [pendingUser, setPendingUser] = useState(null); // Holds the cognitoUser for password challenge
+
     const [formData, setFormData] = useState({
         username: '',
         password: '',
         email: '',
         name: '',
-        code: ''
+        code: '',
+        newPassword: ''
     });
     const navigate = useNavigate();
 
@@ -26,9 +29,16 @@ const Login = ({ onLogin }) => {
 
         try {
             if (mode === 'login') {
-                await signIn(formData.username, formData.password);
-                await onLogin();
-                navigate('/catalog');
+                const result = await signIn(formData.username, formData.password);
+
+                if (result.challenge === 'NewPasswordRequired') {
+                    setPendingUser(result.cognitoUser);
+                    setMode('new_password');
+                    setMessage('Your account requires a new password before signing in.');
+                } else {
+                    await onLogin();
+                    navigate('/catalog');
+                }
             }
             else if (mode === 'signup') {
                 await signUp(formData.username, formData.password, formData.email, formData.name);
@@ -39,6 +49,13 @@ const Login = ({ onLogin }) => {
                 await confirmSignUp(formData.username, formData.code);
                 setMessage('Account verified! You can now sign in.');
                 setMode('login');
+            }
+            else if (mode === 'new_password') {
+                if (!pendingUser) throw new Error('No pending session found.');
+                await completeNewPassword(pendingUser, formData.newPassword);
+                setMessage('Password updated! You can now sign in with your new credentials.');
+                setMode('login');
+                setPendingUser(null);
             }
         } catch (err) {
             console.error(err);
@@ -62,11 +79,13 @@ const Login = ({ onLogin }) => {
                         {mode === 'login' && 'Welcome Back'}
                         {mode === 'signup' && 'Create Account'}
                         {mode === 'verify' && 'Verify Account'}
+                        {mode === 'new_password' && 'Set New Password'}
                     </h2>
                     <p className="text-slate-400">
                         {mode === 'login' && 'Sign in to access your media cloud'}
                         {mode === 'signup' && 'Join the next-gen media platform'}
-                        {mode === 'verify' && `Enter the code sent to ${formData.email}`}
+                        {mode === 'verify' && `Enter the code sent to your email`}
+                        {mode === 'new_password' && 'Security requirement: Please set a fresh password'}
                     </p>
                 </div>
 
@@ -123,7 +142,7 @@ const Login = ({ onLogin }) => {
                         </>
                     )}
 
-                    {mode !== 'verify' && (
+                    {(mode === 'login' || mode === 'signup') && (
                         <div className="space-y-1">
                             <label className="text-xs font-semibold text-slate-500 uppercase ml-1">Username or Email</label>
                             <div className="relative">
@@ -137,7 +156,7 @@ const Login = ({ onLogin }) => {
                         </div>
                     )}
 
-                    {mode !== 'verify' && (
+                    {(mode === 'login' || mode === 'signup') && (
                         <div className="space-y-1">
                             <label className="text-xs font-semibold text-slate-500 uppercase ml-1">Password</label>
                             <div className="relative">
@@ -146,6 +165,20 @@ const Login = ({ onLogin }) => {
                                     type="password" required placeholder="••••••••" className="form-input pl-12"
                                     value={formData.password}
                                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                />
+                            </div>
+                        </div>
+                    )}
+
+                    {mode === 'new_password' && (
+                        <div className="space-y-1">
+                            <label className="text-xs font-semibold text-slate-500 uppercase ml-1">New Secure Password</label>
+                            <div className="relative">
+                                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+                                <input
+                                    type="password" required placeholder="Min. 8 characters" className="form-input pl-12"
+                                    value={formData.newPassword}
+                                    onChange={(e) => setFormData({ ...formData, newPassword: e.target.value })}
                                 />
                             </div>
                         </div>
@@ -172,7 +205,10 @@ const Login = ({ onLogin }) => {
                     >
                         {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (
                             <>
-                                {mode === 'login' ? 'Sign In' : mode === 'signup' ? 'Create Account' : 'Verify My Account'}
+                                {mode === 'login' && 'Sign In'}
+                                {mode === 'signup' && 'Create Account'}
+                                {mode === 'verify' && 'Verify My Account'}
+                                {mode === 'new_password' && 'Change Password & Login'}
                                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                             </>
                         )}
@@ -189,19 +225,10 @@ const Login = ({ onLogin }) => {
                         </button>
                     ) : (
                         <button
-                            onClick={() => { setMode('login'); setError(''); setMessage(''); }}
+                            onClick={() => { setMode('login'); setError(''); setMessage(''); setPendingUser(null); }}
                             className="text-slate-400 hover:text-brand-400 transition-colors text-sm font-medium"
                         >
                             Back to Sign In
-                        </button>
-                    )}
-
-                    {mode === 'login' && (
-                        <button
-                            onClick={() => { setMode('verify'); setError(''); setMessage(''); }}
-                            className="text-slate-500 hover:text-slate-300 transition-colors text-xs"
-                        >
-                            Need to verify an existing account?
                         </button>
                     )}
                 </div>

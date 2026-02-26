@@ -38,12 +38,12 @@ const App = () => {
     }
 
     return (
-        <div className="min-h-screen bg-[#020617] text-slate-200">
+        <div className="min-h-screen bg-[#020617] text-slate-200 flex flex-col">
             <div className="bg-mesh"></div>
 
             {location.pathname !== '/login' && <Navbar user={user} onLogout={checkAuth} />}
 
-            <main className="container mx-auto px-4 py-8">
+            <main className={`container mx-auto px-4 ${location.pathname !== '/login' ? 'pt-24' : 'pt-8'} flex-grow pb-12`}>
                 <Routes>
                     <Route path="/" element={<Home />} />
                     <Route path="/login" element={<Login onLogin={checkAuth} />} />
