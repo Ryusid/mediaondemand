@@ -20,7 +20,7 @@ services:
       options:
         awslogs-region: ${AWS_REGION:-eu-west-1}
         awslogs-group: /mediaondemand/user-service
-        awslogs-stream-prefix: ecs
+        tag: "{{.Name}}"
 
   # --- Catalog Service ---
   catalog-service:
@@ -42,7 +42,7 @@ services:
       options:
         awslogs-region: ${AWS_REGION:-eu-west-1}
         awslogs-group: /mediaondemand/catalog-service
-        awslogs-stream-prefix: ecs
+        tag: "{{.Name}}"
 
   # --- Upload Service ---
   upload-service:
@@ -62,7 +62,7 @@ services:
       options:
         awslogs-region: ${AWS_REGION:-eu-west-1}
         awslogs-group: /mediaondemand/upload-service
-        awslogs-stream-prefix: ecs
+        tag: "{{.Name}}"
 
   # --- Search Service ---
   search-service:
@@ -82,7 +82,7 @@ services:
       options:
         awslogs-region: ${AWS_REGION:-eu-west-1}
         awslogs-group: /mediaondemand/search-service
-        awslogs-stream-prefix: ecs
+        tag: "{{.Name}}"
 
   # --- Streaming Service ---
   streaming-service:
@@ -103,7 +103,7 @@ services:
       options:
         awslogs-region: ${AWS_REGION:-eu-west-1}
         awslogs-group: /mediaondemand/streaming-service
-        awslogs-stream-prefix: ecs
+        tag: "{{.Name}}"
 
   # --- Nginx Reverse Proxy (routes /api/users, /api/catalog, etc.) ---
   nginx:
