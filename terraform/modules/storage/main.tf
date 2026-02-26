@@ -17,6 +17,18 @@ resource "aws_s3_bucket_versioning" "raw" {
   }
 }
 
+resource "aws_s3_bucket_cors_configuration" "raw" {
+  bucket = aws_s3_bucket.raw.id
+
+  cors_rule {
+    allowed_headers = ["*"]
+    allowed_methods = ["GET", "PUT", "POST", "DELETE", "HEAD"]
+    allowed_origins = ["*"]
+    expose_headers  = ["ETag", "x-amz-request-id", "x-amz-id-2"]
+    max_age_seconds = 3600
+  }
+}
+
 # Enable event notifications to SQS
 resource "aws_s3_bucket_notification" "raw" {
   bucket = aws_s3_bucket.raw.id

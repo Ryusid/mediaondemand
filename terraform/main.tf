@@ -38,6 +38,7 @@ module "media_processing" {
   raw_bucket_arn        = module.storage.raw_bucket_arn
   processed_bucket_arn  = module.storage.processed_bucket_arn
   processed_bucket_name = module.storage.processed_bucket_name
+  ec2_public_ip         = module.compute.ec2_public_ip
 }
 
 # --- Database ---

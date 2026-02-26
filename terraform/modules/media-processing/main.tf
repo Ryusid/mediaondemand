@@ -198,3 +198,46 @@ resource "aws_lambda_event_source_mapping" "ebook" {
   function_name    = aws_lambda_function.ebook_converter.arn
   batch_size       = 1
 }
+
+# --- Status Callback Lambda ---
+data "archive_file" "status_updater" {
+  type        = "zip"
+  source_dir  = "${path.root}/../lambda/status-updater"
+  output_path = "${path.root}/../lambda/status-updater.zip"
+}
+
+resource "aws_lambda_function" "status_updater" {
+  function_name    = "${var.project_name}-status-updater"
+  role             = aws_iam_role.lambda.arn
+  handler          = "index.handler"
+  runtime          = "nodejs18.x"
+  timeout          = 30
+  filename         = data.archive_file.status_updater.output_path
+  source_code_hash = data.archive_file.status_updater.output_base64sha256
+
+  environment {
+    variables = {
+      API_URL         = "http://${var.ec2_public_ip}:3000"
+      INTERNAL_SECRET = "media-secret-2026"
+    }
+  }
+
+  tags = {
+    Name = "${var.project_name}-status-updater"
+  }
+}
+
+# SNS subscription for status updater
+resource "aws_sns_topic_subscription" "status_updater" {
+  topic_arn = aws_sns_topic.processing_complete.arn
+  protocol  = "lambda"
+  endpoint  = aws_lambda_function.status_updater.arn
+}
+
+resource "aws_lambda_permission" "sns" {
+  statement_id  = "AllowExecutionFromSNS"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.status_updater.function_name
+  principal     = "sns.amazonaws.com"
+  source_arn    = aws_sns_topic.processing_complete.arn
+}
