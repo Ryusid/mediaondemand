@@ -102,17 +102,28 @@ resource "aws_instance" "main" {
     systemctl start docker
     usermod -aG docker ec2-user
 
+    # Install Docker Buildx (Required for modern compose builds)
+    export BUILDX_VERSION=$(curl -s https://api.github.com/repos/docker/buildx/releases/latest | grep 'tag_name' | cut -d\" -f4)
+    mkdir -p /home/ec2-user/.docker/cli-plugins/
+    curl -L "https://github.com/docker/buildx/releases/download/$${BUILDX_VERSION}/buildx-$${BUILDX_VERSION}.linux-amd64" -o /home/ec2-user/.docker/cli-plugins/docker-buildx
+    chmod +x /home/ec2-user/.docker/cli-plugins/docker-buildx
+    chown -R ec2-user:ec2-user /home/ec2-user/.docker
+
     # Install Docker Compose
     curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
     chmod +x /usr/local/bin/docker-compose
 
+    # Install Java 17 (Required for modern Jenkins)
+    yum install -y java-17-amazon-corretto-devel
+
     # Install Jenkins
-    yum install -y java-11-amazon-corretto
     wget -O /etc/yum.repos.d/jenkins.repo https://pkg.jenkins.io/redhat-stable/jenkins.repo
     rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io-2023.key
     yum install -y jenkins
+    
+    # Configure Jenkins to use Java 17 if needed and start
     systemctl enable jenkins
-    systemctl start jenkins
+    systemctl start jenkins || (journalctl -u jenkins --no-pager && exit 1)
 
     # Add jenkins user to docker group
     usermod -aG docker jenkins
