@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { catalogApi, streamingApi } from '../services/api';
 import { ChevronLeft, Loader2, AlertCircle, Maximize2 } from 'lucide-react';
+import { ReactReader } from 'react-reader';
 
 const Viewer = () => {
     const { id } = useParams();
@@ -10,6 +11,7 @@ const Viewer = () => {
     const [streamUrl, setStreamUrl] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [location, setLocation] = useState(null);
 
     useEffect(() => {
         fetchItem();
@@ -70,11 +72,22 @@ const Viewer = () => {
 
             <div className="flex-grow bg-slate-900 rounded-3xl overflow-hidden border border-white/10 shadow-2xl relative">
                 {item.status === 'ready' ? (
-                    <iframe
-                        src={viewerUrl}
-                        className="w-full h-full border-none"
-                        title={item.title}
-                    />
+                    item.format?.toLowerCase() === 'epub' ? (
+                        <div className="absolute inset-0">
+                            <ReactReader
+                                url={viewerUrl}
+                                title={item.title}
+                                location={location}
+                                locationChanged={(epubcfi) => setLocation(epubcfi)}
+                            />
+                        </div>
+                    ) : (
+                        <iframe
+                            src={viewerUrl}
+                            className="w-full h-full border-none"
+                            title={item.title}
+                        />
+                    )
                 ) : (
                     <div className="absolute inset-0 flex flex-col items-center justify-center space-y-4 bg-slate-900/50 backdrop-blur-xl">
                         <Loader2 className="w-12 h-12 text-indigo-500 animate-spin" />

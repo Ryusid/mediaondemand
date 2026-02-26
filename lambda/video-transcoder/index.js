@@ -39,8 +39,10 @@ exports.handler = async (event) => {
 
       // Transcode with FFmpeg (basic H.264 encoding)
       console.log('Starting FFmpeg transcoding...');
+      const ffmpegPath = require('ffmpeg-static');
+
       execSync(
-        `ffmpeg -i ${tmpInput} -c:v libx264 -preset fast -crf 28 -c:a aac -b:a 128k -movflags +faststart -y ${tmpOutput}`,
+        `${ffmpegPath} -i ${tmpInput} -c:v libx264 -preset fast -crf 28 -c:a aac -b:a 128k -movflags +faststart -y ${tmpOutput}`,
         { stdio: 'inherit', timeout: 840000 } // 14 min timeout
       );
 
