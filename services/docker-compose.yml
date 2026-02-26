@@ -113,7 +113,7 @@ services:
     build:
       context: ../frontend
       args:
-        - VITE_API_URL=https://1z8auak2he.execute-api.eu-west-1.amazonaws.com/prod
+        - VITE_API_URL=https://1z8auak2he.execute-api.eu-west-1.amazonaws.com/prod/api
         - VITE_COGNITO_USER_POOL_ID=eu-west-1_gOYXVwNzU
         - VITE_COGNITO_CLIENT_ID=2q4ona2rar6km41k0krki5qk5n
         - VITE_AWS_REGION=eu-west-1
