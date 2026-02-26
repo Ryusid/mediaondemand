@@ -1,0 +1,10 @@
+{
+  "name": "video-transcoder",
+  "version": "1.0.0",
+  "description": "Lambda function for video transcoding with FFmpeg",
+  "main": "index.js",
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.400.0",
+    "@aws-sdk/client-sns": "^3.400.0"
+  }
+}

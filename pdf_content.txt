@@ -1,0 +1,15 @@
+Traceback (most recent call last):
+  File "<string>", line 8, in <module>
+--- Page 1 ---
+    print(text)
+    ~~~~~^^^^^^
+  File "C:\Users\Utilisateur\AppData\Local\Programs\Python\Python313\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u25cf' in position 11: character maps to <undefined>
+Architectures 
+modernes & cloud 
+CFA INSTA 2025/2026 
+
+
+--- Page 2 ---
