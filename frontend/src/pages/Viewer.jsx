@@ -53,7 +53,7 @@ const Viewer = () => {
     const viewerUrl = streamUrl;
 
     return (
-        <div className="max-w-5xl mx-auto space-y-8 pb-24 h-[calc(100vh-12rem)] flex flex-col">
+        <div className="h-screen w-full flex flex-col bg-slate-950 p-4 sm:p-6 gap-4">
             <div className="flex items-center justify-between">
                 <button
                     onClick={() => navigate('/catalog')}
@@ -70,7 +70,7 @@ const Viewer = () => {
                 </div>
             </div>
 
-            <div className="flex-grow bg-slate-900 rounded-3xl overflow-hidden border border-white/10 shadow-2xl relative">
+            <div className="flex-grow bg-slate-900 rounded-2xl overflow-hidden border border-white/10 shadow-2xl relative">
                 {item.status === 'ready' ? (
                     item.format?.toLowerCase() === 'epub' ? (
                         <div className="absolute inset-0">
