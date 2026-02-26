@@ -1,9 +1,17 @@
 import axios from 'axios';
 import { getSession } from './auth';
 
+const getBaseURL = () => {
+    const envURL = import.meta.env.VITE_API_URL;
+    if (!envURL) return '/api';
+
+    // Ensure it ends with /api but doesn't have double //
+    const cleanURL = envURL.replace(/\/$/, '');
+    return cleanURL.endsWith('/api') ? cleanURL : `${cleanURL}/api`;
+};
+
 const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || '/api',
-    // If VITE_API_URL is an external cloud URL, we'll rely on the API Gateway proxying
+    baseURL: getBaseURL(),
 });
 
 // Add a request interceptor to include the JWT token
