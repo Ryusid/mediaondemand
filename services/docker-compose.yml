@@ -24,7 +24,9 @@ services:
 
   # --- Catalog Service ---
   catalog-service:
-    build: ./catalog-service
+    image: ghcr.io/ryusid/mediaondemand/catalog-service:latest
+    build: local
+    context: ./catalog-service
     container_name: mod-catalog-service
     ports:
       - "3002:3000"
@@ -109,6 +111,7 @@ services:
 
   # --- Frontend & Gateway (Nginx) ---
   nginx:
+    image: ghcr.io/ryusid/mediaondemand/nginx:latest
     build:
       context: ../frontend
       args:
