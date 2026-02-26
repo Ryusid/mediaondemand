@@ -52,7 +52,9 @@ const Login = ({ onLogin }) => {
             }
             else if (mode === 'new_password') {
                 if (!pendingUser) throw new Error('No pending session found.');
-                await completeNewPassword(pendingUser, formData.newPassword);
+                // Pass attributes required by the pool (name is required in our config)
+                const attributes = { name: formData.name };
+                await completeNewPassword(pendingUser, formData.newPassword, attributes);
                 setMessage('Password updated! You can now sign in with your new credentials.');
                 setMode('login');
                 setPendingUser(null);
@@ -115,31 +117,32 @@ const Login = ({ onLogin }) => {
                 </AnimatePresence>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
+                    {(mode === 'signup' || mode === 'new_password') && (
+                        <div className="space-y-1">
+                            <label className="text-xs font-semibold text-slate-500 uppercase ml-1">Full Name</label>
+                            <div className="relative">
+                                <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+                                <input
+                                    type="text" required placeholder="John Doe" className="form-input pl-12"
+                                    value={formData.name}
+                                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                />
+                            </div>
+                        </div>
+                    )}
+
                     {mode === 'signup' && (
-                        <>
-                            <div className="space-y-1">
-                                <label className="text-xs font-semibold text-slate-500 uppercase ml-1">Full Name</label>
-                                <div className="relative">
-                                    <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
-                                    <input
-                                        type="text" required placeholder="John Doe" className="form-input pl-12"
-                                        value={formData.name}
-                                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                    />
-                                </div>
+                        <div className="space-y-1">
+                            <label className="text-xs font-semibold text-slate-500 uppercase ml-1">Email Address</label>
+                            <div className="relative">
+                                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+                                <input
+                                    type="email" required placeholder="name@example.com" className="form-input pl-12"
+                                    value={formData.email}
+                                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                />
                             </div>
-                            <div className="space-y-1">
-                                <label className="text-xs font-semibold text-slate-500 uppercase ml-1">Email Address</label>
-                                <div className="relative">
-                                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
-                                    <input
-                                        type="email" required placeholder="name@example.com" className="form-input pl-12"
-                                        value={formData.email}
-                                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                    />
-                                </div>
-                            </div>
-                        </>
+                        </div>
                     )}
 
                     {(mode === 'login' || mode === 'signup') && (

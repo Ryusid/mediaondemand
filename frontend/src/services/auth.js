@@ -68,9 +68,9 @@ export const signIn = (username, password) => {
     });
 };
 
-export const completeNewPassword = (cognitoUser, newPassword) => {
+export const completeNewPassword = (cognitoUser, newPassword, attributes = {}) => {
     return new Promise((resolve, reject) => {
-        cognitoUser.completeNewPasswordChallenge(newPassword, {}, {
+        cognitoUser.completeNewPasswordChallenge(newPassword, attributes, {
             onSuccess: (result) => resolve(result),
             onFailure: (err) => reject(err)
         });

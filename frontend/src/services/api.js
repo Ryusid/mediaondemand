@@ -24,6 +24,7 @@ api.interceptors.request.use(async (config) => {
 export const catalogApi = {
     list: (params) => api.get('/catalog', { params }),
     get: (id) => api.get(`/catalog/${id}`),
+    create: (data) => api.post('/catalog', data),
     search: (q) => api.get('/search', { params: { q } }),
     suggest: (q) => api.get('/search/suggest', { params: { q } }),
 };
