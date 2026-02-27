@@ -71,6 +71,18 @@ resource "aws_s3_bucket_policy" "processed" {
   })
 }
 
+resource "aws_s3_bucket_cors_configuration" "processed" {
+  bucket = aws_s3_bucket.processed.id
+
+  cors_rule {
+    allowed_headers = ["*"]
+    allowed_methods = ["GET", "HEAD"]
+    allowed_origins = ["*"]
+    expose_headers  = ["ETag", "x-amz-meta-custom-header"]
+    max_age_seconds = 3000
+  }
+}
+
 resource "random_string" "bucket_suffix" {
   length  = 8
   special = false
@@ -97,12 +109,13 @@ resource "aws_cloudfront_distribution" "main" {
   }
 
   default_cache_behavior {
-    allowed_methods  = ["GET", "HEAD"]
-    cached_methods   = ["GET", "HEAD"]
+    allowed_methods  = ["GET", "HEAD", "OPTIONS"]
+    cached_methods   = ["GET", "HEAD", "OPTIONS"]
     target_origin_id = "S3-processed"
 
     forwarded_values {
       query_string = false
+      headers      = ["Origin", "Access-Control-Request-Headers", "Access-Control-Request-Method"]
       cookies {
         forward = "none"
       }

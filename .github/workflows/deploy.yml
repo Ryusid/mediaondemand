@@ -10,7 +10,37 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      frontend: ${{ steps.filter.outputs.frontend }}
+      catalog: ${{ steps.filter.outputs.catalog }}
+      user: ${{ steps.filter.outputs.user }}
+      upload: ${{ steps.filter.outputs.upload }}
+      search: ${{ steps.filter.outputs.search }}
+      streaming: ${{ steps.filter.outputs.streaming }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            frontend:
+              - 'frontend/**'
+              - 'services/nginx.conf'
+            catalog:
+              - 'services/catalog-service/**'
+            user:
+              - 'services/user-service/**'
+            upload:
+              - 'services/upload-service/**'
+            search:
+              - 'services/search-service/**'
+            streaming:
+              - 'services/streaming-service/**'
+
   build-and-push:
+    needs: changes
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -35,6 +65,7 @@ jobs:
 
       # Build and push Nginx (Frontend)
       - name: Build and push Nginx
+        if: needs.changes.outputs.frontend == 'true'
         uses: docker/build-push-action@v5
         with:
           context: ./frontend
@@ -48,8 +79,45 @@ jobs:
 
       # Build and push Catalog Service
       - name: Build and push Catalog Service
+        if: needs.changes.outputs.catalog == 'true'
         uses: docker/build-push-action@v5
         with:
           context: ./services/catalog-service
           push: true
           tags: ghcr.io/ryusid/mediaondemand/catalog-service:latest
+
+      # Build and push User Service
+      - name: Build and push User Service
+        if: needs.changes.outputs.user == 'true'
+        uses: docker/build-push-action@v5
+        with:
+          context: ./services/user-service
+          push: true
+          tags: ghcr.io/ryusid/mediaondemand/user-service:latest
+
+      # Build and push Upload Service
+      - name: Build and push Upload Service
+        if: needs.changes.outputs.upload == 'true'
+        uses: docker/build-push-action@v5
+        with:
+          context: ./services/upload-service
+          push: true
+          tags: ghcr.io/ryusid/mediaondemand/upload-service:latest
+
+      # Build and push Search Service
+      - name: Build and push Search Service
+        if: needs.changes.outputs.search == 'true'
+        uses: docker/build-push-action@v5
+        with:
+          context: ./services/search-service
+          push: true
+          tags: ghcr.io/ryusid/mediaondemand/search-service:latest
+
+      # Build and push Streaming Service
+      - name: Build and push Streaming Service
+        if: needs.changes.outputs.streaming == 'true'
+        uses: docker/build-push-action@v5
+        with:
+          context: ./services/streaming-service
+          push: true
+          tags: ghcr.io/ryusid/mediaondemand/streaming-service:latest

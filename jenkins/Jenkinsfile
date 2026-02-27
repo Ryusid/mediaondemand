@@ -13,22 +13,14 @@ pipeline {
             }
         }
 
-        stage('Docker Rebuild') {
+        stage('Deploy (Pull & Run)') {
             steps {
                 script {
                     dir('services') {
-                        // Force rebuild to ensure code changes are picked up
-                        sh 'docker-compose build --no-cache nginx catalog-service'
-                        sh 'docker-compose build' 
-                    }
-                }
-            }
-        }
-
-        stage('Deploy') {
-            steps {
-                script {
-                    dir('services') {
+                        // Pull the latest pre-built images from GitHub
+                        sh 'docker-compose pull'
+                        
+                        // Start/Update the containers
                         sh 'docker-compose up -d --remove-orphans'
                     }
                 }
@@ -48,13 +40,14 @@ pipeline {
 
     post {
         success {
-            echo 'Deployment successful! Website is live.'
+            echo 'Deployment successful! Application updated from GHCR.'
         }
         failure {
             echo 'Deployment failed. Check logs.'
         }
         always {
-            sh 'docker image prune -f || true'
+            // Clean up old unused images to save disk space
+            sh 'docker image prune -af || true'
         }
     }
 }
