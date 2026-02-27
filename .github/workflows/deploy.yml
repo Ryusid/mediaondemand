@@ -124,15 +124,7 @@ jobs:
 
   deploy:
     needs: [changes, build-and-push]
-    if: |
-      always() && 
-      needs.build-and-push.result == 'success' &&
-      (needs.changes.outputs.frontend == 'true' || 
-       needs.changes.outputs.catalog == 'true' || 
-       needs.changes.outputs.user == 'true' || 
-       needs.changes.outputs.upload == 'true' || 
-       needs.changes.outputs.search == 'true' || 
-       needs.changes.outputs.streaming == 'true')
+    if: always() && needs.build-and-push.result == 'success'
     runs-on: ubuntu-latest
     steps:
       - name: Deploy to EC2 via SSH
