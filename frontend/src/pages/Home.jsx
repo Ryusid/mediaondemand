@@ -14,12 +14,7 @@ const Home = () => {
                     transition={{ duration: 0.8 }}
                     className="z-10"
                 >
-                    <div className="inline-flex items-center gap-2 px-4 py-2 bg-brand-500/10 border border-brand-500/20 rounded-full text-brand-400 text-sm font-semibold mb-8 backdrop-blur-sm">
-                        <Zap className="w-4 h-4 fill-brand-400" />
-                        <span>Built on AWS Free Tier — Always Ready</span>
-                    </div>
-
-                    <h1 className="text-6xl md:text-8xl font-black mb-6 leading-tight">
+                    <div className="h-8"></div>                    <h1 className="text-6xl md:text-8xl font-black mb-6 leading-tight">
                         Infinite Content. <br />
                         <span className="gradient-text">Zero Overhead.</span>
                     </h1>
