@@ -121,3 +121,34 @@ jobs:
           context: ./services/streaming-service
           push: true
           tags: ghcr.io/ryusid/mediaondemand/streaming-service:latest
+
+  deploy:
+    needs: [changes, build-and-push]
+    if: |
+      always() && 
+      needs.build-and-push.result == 'success' &&
+      (needs.changes.outputs.frontend == 'true' || 
+       needs.changes.outputs.catalog == 'true' || 
+       needs.changes.outputs.user == 'true' || 
+       needs.changes.outputs.upload == 'true' || 
+       needs.changes.outputs.search == 'true' || 
+       needs.changes.outputs.streaming == 'true')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to EC2 via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ec2-user
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          envs: GITHUB_TOKEN
+          script: |
+            cd ~/mediaondemand
+            git pull
+            cd services
+            echo "$GITHUB_TOKEN" | docker login ghcr.io -u ${{ github.actor }} --password-stdin || true
+            docker-compose pull
+            docker-compose up -d --remove-orphans
+            docker image prune -af
